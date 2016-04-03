@@ -45,59 +45,18 @@ $home_path = get_home_path();
 date_default_timezone_set('PRC');
 define('SCRIPT_URI',$script_uri);
 define('CosSiteHome',$cossithome);
+define('CosSiteHomeMain',$cossithome."./index.html");
 define('CosBlogPath', $home_path);
 define("COSMETA","<!--this is a real static html file created at ".date("Y-m-d H:i:s")." by cos-html-cache ".COSVERSION." -->");
 function CreateHtmlFile($FilePath,$Content){
-	$FilePath = preg_replace('/[ <>\'\"\r\n\t\(\)]/', '', $FilePath);
-
-	// if there is http:// $FilePath will return its bas path
-	$dir_array = explode("/",$FilePath);
-
-	//split the FilePath
-	$max_index = count($dir_array) ;
-	$i = 0;
-	//$path = $_SERVER['DOCUMENT_ROOT']."/";
-	$path = $_SERVER['HTTP_HOST']."/";
-
-	while( $i < $max_index ){
-		$path .= "/".$dir_array[$i];
-		$path = str_replace("//","/",$path);
-
-		if( $dir_array[$i] == "" ){
-			$i ++ ;
-			continue;
-		}
-
-		if( substr_count($path, '&') ) return true;
-		if( substr_count($path, '?') ) return true;
-		// if( !substr_count($path, '.htm') ){
-		// 	//if is a directory
-		// 	if( !file_exists( $path ) ){
-		// 		@mkdir( $path, 0777);
-		// 		@chmod( $path, 0777 );
-		// 	}
-		// }
-		$i ++;
+	if ( !strstr( strtolower($Content), '</html>' ) ) {
+		return;
 	}
-	$path = 'http://'.$path;
-    if( is_dir( $path ) ){
-		$path = $path."/index.html";
-	}
-	if ( !strstr( strtolower($Content), '</html>' ) ) return;
-$kv=new SaeKV();
-$kv->init();
-	$kv->set($path,$Content);
-	//if sql error ignore...
-	// $fp = @fopen( $path , "w+" );
-	// if( $fp ){
-	// 	@chmod($path, 0666 ) ;
-	// 	@flock($fp ,LOCK_EX );
-
-	// 	// write the file。
-	// 	fwrite( $fp , $Content );
-	// 	@flock($fp, LOCK_UN);
-	// 	fclose($fp);
-	//  }
+	
+	$kv=new SaeKV();
+	$kv->init();	
+	$kv->set(SCRIPT_URI, $Content);
+	sae_debug("CreateHtmlFile, succeed to create an static page, SCRIPT_URI=".SCRIPT_URI);
 }
 
 /* read the content from output buffer */
@@ -140,25 +99,17 @@ $comment_author='';*/
 	
 	
 	elseif( SCRIPT_URI == CosSiteHome) {// creat homepage
-    	$kv=new SaeKV();
-$kv->init();
-    	//$kv->set(CosBlogPath.'index.bak',$buffer.COSMETA);
-		
-		// $fp = @fopen( CosBlogPath."index.bak" , "w+" );
-		// if( $fp ){
-		// 	@flock($fp ,LOCK_EX );
-		// 	// write the file。
-		// 	fwrite( $fp , $buffer.COSMETA );
-		// 	@flock($fp, LOCK_UN);
-		// 	fclose($fp);
-		//  }
-		if(IS_INDEX)
-        $kv->set(CosSiteHome.'/index.html',$buffer.COSMETA);
-
-			//@rename(CosBlogPath."index.bak",CosBlogPath."index.html");
+		$kv=new SaeKV();
+		$kv->init();
+		if (IS_INDEX) {
+			$kv->set(CosSiteHomeMain, $buffer.COSMETA);
+			sae_debug("cos_cache_ob_callback, succed to create static index page, key=".CosSiteHomeMain);
+		}
 	}
-	else
+	else {
 		CreateHtmlFile($_SERVER['REQUEST_URI'],$buffer.COSMETA );
+	}
+		
 	return $buffer;
 }
 
@@ -169,24 +120,24 @@ function cos_cache_shutdown_callback(){
 
 if( !function_exists('DelCacheByUrl') ){
 	function DelCacheByUrl($url) {
-		//$url = CosBlogPath.str_replace( CosSiteHome,"",$url );
-		//$url = str_replace("//","/", $url );
 		$kv=new SaeKV();
 		$kv->init();
 		if ($kv->get($url)) {
-        	$kv->delete($url);
-        }
-		 // if( file_exists( $url )){
-			//  if( is_dir( $url )) {@unlink( $url."/index.html" );@rmdir($url);}
-			//  else @unlink( $url );
-		 // }
+			$kv->delete($url);
+			sae_debug("DelCacheByUrl, succed to delete cache, key=".$url);
+		}
+		else {
+			sae_debug("DelCacheByUrl, no cache to delete, key=".$url);
+		}
 	}
 }
 
 if( !function_exists('htmlCacheDel') ){
 	// create single html
 	function htmlCacheDel($post_ID) {
-		if( $post_ID == "" ) return true;
+		if( $post_ID == "" ) {
+			return true;
+		}
 		$uri = get_permalink($post_ID);
 		DelCacheByUrl($uri );
 	}
@@ -195,7 +146,9 @@ if( !function_exists('htmlCacheDel') ){
 if( !function_exists('htmlCacheDelNb') ){
 	// delete nabour posts
 	function htmlCacheDelNb($post_ID) {
-		if( $post_ID == "" ) return true;
+		if( $post_ID == "" ) {
+			return true;
+		}
 
 		$uri = get_permalink($post_ID);
 		DelCacheByUrl($uri );
@@ -214,15 +167,18 @@ if( !function_exists('htmlCacheDelNb') ){
 //create index.html
 if( !function_exists('createIndexHTML') ){
 	function createIndexHTML($post_ID){
-		if( $post_ID == "" ) return true;
-		//[menghao]@rename(ABSPATH."index.html",ABSPATH."index.bak");
+		if( $post_ID == "" ) {
+			return true;
+		}
 		$kv=new SaeKV();
 		$kv->init();
-        if ($kv->get(CosSiteHome.'/index.html')) {
-        	//$kv->set(CosBlogPath.'index.bak',$ret);
-	        $kv->delete(CosSiteHome.'/index.html');
+        if ($kv->get(CosSiteHomeMain)) {
+	        $kv->delete(CosSiteHomeMain);
+	        sae_debug("createIndexHTML, succeed to delete cache, key=".$url);
         }
-        //@rename(CosBlogPath."index.html",CosBlogPath."index.bak");//[menghao]
+        else {
+        	sae_debug("createIndexHTML, no cache to delete, key=".$url);
+        }
 	}
 }
 
@@ -253,7 +209,6 @@ function cosHtmlOption(){
 
 	<p><b><?php _e("specify a post ID or Title to to delete the related cache file","cosbeta");?></b> <input type="text" id="cache_id" name="cache_id" value="" /> <?php _e("Leave blank if you want to delete all caches","cosbeta");?></p>
 	<p><input type="submit" value="<?php _e("Delete Html Cache files","cosbeta");?>" id="htmlCacheDelbt" name="htmlCacheDelbt" onClick="return checkcacheinput(); " />
-	<p><input type="submit" value="删除首页" id="indexHtmlCacheDelbt" name="indexHtmlCacheDelbt" onClick="return checkcacheinput1(); " />
 	</form>
 	</div>
 
@@ -261,9 +216,6 @@ function cosHtmlOption(){
 	<!--
 		function checkcacheinput(){
 		document.getElementById('htmlCacheDelbt').value = 'Please Wait...';
-		return true;
-	}		function checkcacheinput1(){
-		document.getElementById('indexHtmlCacheDelbt').value = 'Please Wait...';
 		return true;
 	}
 	//-->
@@ -279,48 +231,51 @@ function do_cos_html_cache_action(){
 	if ($_POST['indexHtmlCacheDelbt']) {
 		$kv=new SaeKV();
 		$kv->init();
-        $ret=$kv->get(CosSiteHome.'/index.html');
+        $ret=$kv->get(CosSiteHomeMain);
         if ($ret) {
-	        if($kv->delete(CosSiteHome.'/index.html')){
+	        if($kv->delete(CosSiteHomeMain)){
 				$msg = __('Index Caches were deleted successfully','cosbeta');
+				sae_debug("do_cos_html_cache_action 1, succeed to to delete index page, key=".CosSiteHomeMain);
 	        }else{
-				$msg = '存在首页缓存，但是删除失败';
+				sae_debug("do_cos_html_cache_action 1, fail to to delete index page, key=".CosSiteHomeMain);
 	        }
         }else{
-			$msg = '不存在首页缓存';
+			sae_debug("do_cos_html_cache_action 1, no index page to delete, key=".CosSiteHomeMain);
         }
 	}
 	if( !empty($_POST['htmlCacheDelbt']) ){
-		// @rename(CosBlogPath."index.html",CosBlogPath."index.bak");
-		// @chmod( CosBlogPath."index.bak", 0666 );
         $kv=new SaeKV();
 		$kv->init();
-        $ret=$kv->get(CosSiteHome.'/index.html');
+        $ret=$kv->get(CosSiteHomeMain);
         if ($ret) {
-        	//$kv->set(CosBlogPath.'index.bak',$ret);
-	        $kv->delete(CosSiteHome.'/index.html');
+	        $kv->delete(CosSiteHomeMain);
+	        sae_debug("do_cos_html_cache_action 2, succeed to to delete index page, key=".CosSiteHomeMain);
         }
 		global $wpdb;
 		if( $_POST['cache_id'] * 1 > 0 ){
 			//delete cache by id
 			 DelCacheByUrl(get_permalink($_POST['cache_id']));
 			 $msg = __('the post cache was deleted successfully: ID=','cosbeta').$_POST['cache_id'];
+			 sae_debug("do_cos_html_cache_action 3, succeed to to delete cache, key=".$_POST['cache_id']);
 		}
 		else if( strlen($_POST['cache_id']) > 2  ){
 			$postRes=$wpdb->get_results("SELECT `ID`  FROM `" . $wpdb->posts . "` WHERE post_title like '%".$_POST['cache_id']."%' LIMIT 0,1 ");
 			DelCacheByUrl( get_permalink( $postRes[0]->ID ) );
 			$msg = __('the post cache was deleted successfully: Title=','cosbeta').$_POST['cache_id'];
+			sae_debug("do_cos_html_cache_action 4, succeed to to delete cache, key=".$_POST['cache_id']);
 		}
 		else{
-		$postRes=$wpdb->get_results("SELECT `ID`  FROM `" . $wpdb->posts . "` WHERE post_status = 'publish' AND ( post_type='post' OR  post_type='page' )  ORDER BY post_modified DESC ");
-		foreach($postRes as $post) {
-			DelCacheByUrl(get_permalink($post->ID));
+			$postRes=$wpdb->get_results("SELECT `ID`  FROM `" . $wpdb->posts . "` WHERE post_status = 'publish' AND ( post_type='post' OR  post_type='page' )  ORDER BY post_modified DESC ");
+			foreach($postRes as $post) {
+				DelCacheByUrl(get_permalink($post->ID));
 			}
 			$msg = __('HTML Caches were deleted successfully','cosbeta');
+			sae_debug("do_cos_html_cache_action 5, succeed to to delete cache");
 		}
 	}
-	if($msg)
-	echo '<div class="updated"><strong><p>'.$msg.'</p></strong></div>';
+	if($msg) {
+		echo '<div class="updated"><strong><p>'.$msg.'</p></strong></div>';
+	}
 }
 $is_add_comment_is = true;
 /*

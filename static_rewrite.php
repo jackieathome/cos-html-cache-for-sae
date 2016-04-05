@@ -1,6 +1,6 @@
 <?php 
 define("SUMMETA","<! --this is the first view page created at ".date("Y-m-d H:i:s")." by JackieAtHome static_rewrite.php  -->");
-// - rewrite: if ( %{REQUEST_URI} ~ "archives/\d+" ) goto "wp-content/plugins/cos-html-cache/static_rewrite.php?%{QUERY_STRING}"
+// - rewrite: if ( %{REQUEST_URI} ~ "archives/\d+$" ) goto "wp-content/plugins/cos-html-cache/static_rewrite.php?%{QUERY_STRING}"
  $kv = new SaeKV();
  $kv->init();
 
@@ -9,10 +9,10 @@ define("SUMMETA","<! --this is the first view page created at ".date("Y-m-d H:i:
  if ($sitemap) {
  	header('Content-type:text/html; charset=utf-8');
   	echo $sitemap;
-  	sae_debug("using static page for singe view, SCRIPT_URI=".$requestUri);
+  	sae_debug("using static page for singe view, static_rewrite.php, SCRIPT_URI=".$requestUri);
  }else{
  	echo fetchUrl($requestUri).SUMMETA;
- 	sae_debug("create static page for singe view, SCRIPT_URI=".$requestUri);
+ 	sae_debug("create static page for singe view, static_rewrite.php, SCRIPT_URI=".$requestUri);
  }
  function fetchUrl($url){
  	$ch=curl_init();

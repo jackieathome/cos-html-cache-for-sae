@@ -26,14 +26,11 @@ Change log:
 2012-09-19:  cache remove bug fixed
 				
 */
-sae_debug("cos-html-cache.php, init");
 /* config */
 define('IS_INDEX',true);// false = do not create home page cache 
-sae_debug("cos-html-cache.php, IS_INDEX=".IS_INDEX);
 /*end of config*/
 
 define('COSVERSION','2.7.4');
-sae_debug("cos-html-cache.php, COSVERSION=".COSVERSION);
 require_once(ABSPATH . 'wp-admin/includes/file.php');
 /* end of config */
 $sm_locale = get_locale();
@@ -41,29 +38,21 @@ $sm_locale = get_locale();
 $sm_mofile = dirname(__FILE__) . "/cosbeta-$sm_locale.mo";
 load_textdomain('cosbeta', $sm_mofile);
 $cossithome = get_option('home');
-sae_debug("cos-html-cache.php, cossithome=".$cossithome);
 
 $script_uri = rtrim( "http://".$_SERVER["HTTP_HOST"].$_SERVER["REQUEST_URI"]  ,"/");
-sae_debug("cos-html-cache.php, script_uri=".$script_uri);
 
 $home_path = get_home_path();
-sae_debug("cos-html-cache.php, home_path=".$home_path);
 
 // date_default_timezone_set('PRC');
 define('SCRIPT_URI',$script_uri);
-sae_debug("cos-html-cache.php, SCRIPT_URI=".SCRIPT_URI);
 
 define('CosSiteHome',$cossithome);
-sae_debug("cos-html-cache.php, CosSiteHome=".$cossithome);
 
 define('CosSiteHomeMain',$cossithome."/index.html");
-sae_debug("cos-html-cache.php, CosSiteHomeMain=".CosSiteHomeMain);
 
 define('CosBlogPath', $home_path);
-sae_debug("cos-html-cache.php, CosBlogPath=".CosBlogPath);
 
 define("COSMETA","<!--this is a real static html file created at ".date("Y-m-d H:i:s")." by cos-html-cache ".COSVERSION." -->");
-sae_debug("cos-html-cache.php, succeed to define constants");
 function CreateHtmlFile($FilePath,$Content){
 	if ( !strstr( strtolower($Content), '</html>' ) ) {
 		return;
@@ -74,7 +63,6 @@ function CreateHtmlFile($FilePath,$Content){
 	$kv->set(SCRIPT_URI, $Content);
 	sae_debug("CreateHtmlFile, succeed to create an static page, SCRIPT_URI=".SCRIPT_URI);
 }
-sae_debug("cos-html-cache.php, succeed to define CreateHtmlFile");
 /* read the content from output buffer */
 $is_buffer = false;
 if( substr_count($_SERVER['REQUEST_URI'], '.htm') || ( SCRIPT_URI == CosSiteHome) ){
@@ -88,7 +76,6 @@ if( substr_count($_SERVER['REQUEST_URI'], '.htm') || ( SCRIPT_URI == CosSiteHome
 if( $is_buffer ){
 	ob_start('cos_cache_ob_callback');
 	register_shutdown_function('cos_cache_shutdown_callback');
-	sae_debug("cos-html-cache.php, succeed to define ob_start");
 }
 
 function cos_cache_ob_callback($buffer){
@@ -129,12 +116,10 @@ $comment_author='';*/
 		
 	return $buffer;
 }
-sae_debug("cos-html-cache.php, succeed to define cos_cache_ob_callback");
 function cos_cache_shutdown_callback(){
 	ob_end_flush();
 	flush();
 }
-sae_debug("cos-html-cache.php, succeed to define cos_cache_shutdown_callback");
 if( !function_exists('DelCacheByUrl') ){
 	function DelCacheByUrl($url) {
 		$kv=new SaeKV();
@@ -148,7 +133,6 @@ if( !function_exists('DelCacheByUrl') ){
 		}
 	}
 	
-	sae_debug("cos-html-cache.php, succeed to define DelCacheByUrl");
 }
 
 if( !function_exists('htmlCacheDel') ){
@@ -160,7 +144,6 @@ if( !function_exists('htmlCacheDel') ){
 		$uri = get_permalink($post_ID);
 		DelCacheByUrl($uri );
 	}
-	sae_debug("cos-html-cache.php, succeed to define htmlCacheDel");
 }
 
 if( !function_exists('htmlCacheDelNb') ){
@@ -183,7 +166,6 @@ if( !function_exists('htmlCacheDelNb') ){
 		}
 	}
 	
-	sae_debug("cos-html-cache.php, succeed to define htmlCacheDelNb");
 }
 
 //create index.html
@@ -202,7 +184,6 @@ if( !function_exists('createIndexHTML') ){
         	sae_debug("createIndexHTML, no cache to delete, key=".CosSiteHomeMain);
         }
 	}
-	sae_debug("cos-html-cache.php, succeed to define createIndexHTML");
 }
 
 if(!function_exists("htmlCacheDel_reg_admin")) {
@@ -215,11 +196,9 @@ if(!function_exists("htmlCacheDel_reg_admin")) {
 			//add_options_page($page_title, $menu_title, $access_level, $file).
 		}
 	}
-	sae_debug("cos-html-cache.php, succeed to define htmlCacheDel_reg_admin");
 }
 
 add_action('admin_menu', 'htmlCacheDel_reg_admin');
-sae_debug("cos-html-cache.php, succeed to add action htmlCacheDel_reg_admin");
 if(!function_exists("cosHtmlOption")) {
 function cosHtmlOption(){
 	do_cos_html_cache_action();
@@ -247,7 +226,6 @@ function cosHtmlOption(){
 <?php
 	}
 	
-	sae_debug("cos-html-cache.php, succeed to define cosHtmlOption");
 }
 /*
 end of get url
@@ -304,7 +282,6 @@ function do_cos_html_cache_action(){
 	}
 }
 
-sae_debug("cos-html-cache.php, succeed to define do_cos_html_cache_action");
 $is_add_comment_is = true;
 /*
  * with ajax comments
@@ -331,7 +308,6 @@ if ( !function_exists("cos_comments_js") ){
 		}
 	}
 	
-	sae_debug("cos-html-cache.php, succeed to define cos_comments_js");
 }
 
 function CosSafeTag(){
@@ -359,5 +335,4 @@ if(IS_INDEX){
 	add_action('delete_post', 'createIndexHTML');
 	add_action('publish_post', 'createIndexHTML');
 }
-sae_debug("cos-html-cache.php, succeed to add actions");
 ?>
